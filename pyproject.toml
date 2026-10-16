@@ -14,7 +14,9 @@ dependencies = [
     "python-pptx>=0.6.21",
     "lxml>=4.9.0",
     "Pillow>=9.0.0",
-    "typst>=0.14.0",
+    # Same Typst version as the pinned typst-ts-cli (v0.7.0-rc2 = Typst 0.14.2),
+    # so metadata queried with typst-py matches the typst-ts-cli layout.
+    "typst>=0.14,<0.15",
     "cssselect>=1.2.0",
 ]
 
