@@ -7,6 +7,35 @@
 
 Convert [Typst](https://typst.app/) presentations (using the [Touying](https://github.com/touying-typ/touying) framework) to editable PowerPoint (.pptx) files.
 
+## About this fork
+
+This is a fork of [touying-typ/typ2pptx](https://github.com/touying-typ/typ2pptx) that adds [embedded videos](#embedded-videos) (proposed upstream in [#5](https://github.com/touying-typ/typ2pptx/issues/5)). Please report problems with these additions here, not upstream.
+
+Run it without installing anything (needs [uv](https://docs.astral.sh/uv/); typst-ts-cli is downloaded on first use):
+
+```bash
+FORK=git+https://github.com/tetsugo02/typ2pptx@v0.2.3-video.1
+
+uvx --from "$FORK" typ2pptx --write-video-helper .   # writes video.typ for #video()
+uvx --from "$FORK" typ2pptx slides.typ -o slides.pptx
+```
+
+Or add it to a uv project:
+
+```bash
+uv add "typ2pptx @ git+https://github.com/tetsugo02/typ2pptx@v0.2.3-video.1"
+uv run typ2pptx slides.typ -o slides.pptx
+```
+
+Changes from upstream 0.2.3, each on its own branch:
+
+| Branch | Change |
+|---|---|
+| `feat/video-embedding` | `#video()` helper, `<typ2pptx-video>` metadata, embedded click-to-play videos, `--no-videos`, `--write-video-helper`, typst-py pinned to Typst 0.14 |
+| `feat/typst-ts-cli-auto-download` | download typst-ts-cli (SHA-256 verified) on first use when it is not bundled |
+| `fix/svg-output-path` | `compile_typst_to_svg(output_svg=...)` works; no `.artifact.svg` left next to the source |
+| `chore/uv-project` | uv-managed development (`uv sync`, `uv.lock`) |
+
 ## Features
 
 - **Editable text**: All text is extracted as editable, selectable, copyable PowerPoint text (not rasterized images)
