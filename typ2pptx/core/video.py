@@ -103,14 +103,23 @@ def _video_mime_type(path: Path) -> str:
             or "video/unknown")
 
 
-def _find_poster_picture(slide, box, tolerance_emu: int):
+def _find_poster_picture(slide, box, tolerance_emu: int, size_only: bool = False):
     for shape in slide.shapes:
         if shape.shape_type != MSO_SHAPE_TYPE.PICTURE:
             continue
         got = (shape.left, shape.top, shape.width, shape.height)
-        if all(abs(a - b) <= tolerance_emu for a, b in zip(got, box)):
+        pairs = list(zip(got, box))[2:] if size_only else zip(got, box)
+        if all(abs(a - b) <= tolerance_emu for a, b in pairs):
             return shape
     return None
+
+
+def _typst_py_version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("typst")
+    except Exception:
+        return "unknown"
 
 
 def embed_videos(
@@ -156,6 +165,21 @@ def embed_videos(
             poster_pic = _find_poster_picture(slide, box, tolerance)
             if poster_pic is None:
                 entry["status"] = "skipped"
+                moved = _find_poster_picture(slide, box, tolerance, size_only=True)
+                if moved is not None:
+                    # Same size, different place: the metadata (typst-py) and
+                    # the SVG (typst-ts-cli) were laid out differently.
+                    entry["reason"] = "layout mismatch between typst-py and typst-ts-cli"
+                    print(
+                        f"Warning: video {v.src} on slide {v.page}: a picture of the "
+                        f"poster's size is at EMU {(moved.left, moved.top)}, not "
+                        f"{box[:2]}. typst-py (typst {_typst_py_version()}) and "
+                        f"typst-ts-cli laid out the page differently; install a "
+                        f"typst package on the same Typst version as typst-ts-cli. "
+                        f"The video was not embedded.",
+                        file=sys.stderr,
+                    )
+                    continue
                 entry["reason"] = "poster not rendered on this page (hidden subslide?)"
                 if verbose:
                     print(f"  Video {v.src}: slide {v.page}: {entry['reason']}")

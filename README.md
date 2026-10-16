@@ -106,6 +106,7 @@ In PDF output the poster is shown. The helper also records a `<typ2pptx-video>` 
 - Touying `#pause` / `#only` hide content but keep its metadata. A placement whose poster is not drawn on its page is skipped, so a video appears only on the subslides where it is visible.
 - Video and poster paths are resolved against `--root` (default: the directory of the input file).
 - Use H.264 (+ AAC) MP4 for the widest PowerPoint compatibility.
+- The metadata is laid out by the `typst` Python package and the slides by typst-ts-cli. If their Typst versions differ, a video can end up at a different position; typ2pptx then warns and does not embed it.
 - Autoplay and looping are not supported yet.
 
 See [`examples/video/slides.typ`](examples/video/slides.typ) for a complete deck (its header shows how to create the sample video and poster with FFmpeg).

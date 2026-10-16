@@ -222,3 +222,15 @@ class TestVideoHelper:
         assert (tmp_path / "video.typ").is_file()
         assert "video.typ" in capsys.readouterr().out
 
+
+class TestLayoutMismatch:
+
+    def test_warns_when_poster_moved(self, capsys):
+        # typst-ts-cli drew the poster 20pt lower than the metadata says
+        drawn = VideoPlacement(**{**PLACEMENT.__dict__, "y": PLACEMENT.y + 20})
+        prs, slide = _deck_with_poster(drawn)
+        report = embed_videos(prs, [PLACEMENT], str(PROJECT_DIR), EMU_PER_PT)
+        assert report[0]["status"] == "skipped"
+        assert "mismatch" in report[0]["reason"]
+        assert "laid out the page differently" in capsys.readouterr().err
+        assert _movies(slide) == []
