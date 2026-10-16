@@ -32,7 +32,9 @@ Convert [Typst](https://typst.app/) presentations (using the [Touying](https://g
 - **typst** (Python package, v0.14+): For speaker notes extraction and SVG/PDF image rasterization
   - Installed automatically via pip
 - **typst-ts-cli** (v0.6.0+): For compiling `.typ` files to SVG with foreignObject text overlays
-  - Download from [typst.ts releases](https://github.com/Myriad-Dreamin/typst.ts/releases) automatically
+  - Bundled in the platform wheels on PyPI
+  - Otherwise (sdist, `pip install git+...`) typ2pptx uses `typst-ts-cli` from `PATH`, or downloads the pinned [typst.ts release](https://github.com/Myriad-Dreamin/typst.ts/releases) on first use, verifies its SHA-256, and caches it (`~/Library/Caches/typ2pptx` on macOS, `~/.cache/typ2pptx` on Linux, `%LOCALAPPDATA%\typ2pptx` on Windows; override with `TYP2PPTX_CACHE_DIR`)
+  - Set `TYP2PPTX_NO_DOWNLOAD=1` to disable the automatic download
 
 ## Installation
 

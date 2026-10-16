@@ -11,7 +11,6 @@ import re
 import math
 import json
 import copy
-import shutil
 import tempfile
 import subprocess
 from pathlib import Path
@@ -3345,27 +3344,12 @@ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 
 
 def _find_typst_ts_cli() -> str:
-    """Locate the typst-ts-cli binary.
+    """Locate the typst-ts-cli binary (bundled, PATH, or auto-downloaded).
 
-    Search order:
-    1. Bundled binary shipped inside this package (typ2pptx/data/bin/)
-    2. System PATH
+    See typ2pptx.typst_ts_cli.find_typst_ts_cli for the search order.
     """
-    # 1. Bundled binary
-    bundled = Path(__file__).parent.parent / "data" / "bin" / "typst-ts-cli"
-    if bundled.exists() and os.access(str(bundled), os.X_OK):
-        return str(bundled)
-
-    # 2. System PATH
-    system_cli = shutil.which("typst-ts-cli")
-    if system_cli:
-        return system_cli
-
-    raise FileNotFoundError(
-        "typst-ts-cli not found. Install it from "
-        "https://github.com/Myriad-Dreamin/typst.ts/releases "
-        "or specify its path with --typst-ts-cli"
-    )
+    from ..typst_ts_cli import find_typst_ts_cli
+    return find_typst_ts_cli()
 
 
 def compile_typst_to_svg(
