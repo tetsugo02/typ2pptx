@@ -1,8 +1,9 @@
 """Shared fixtures for typ2pptx tests."""
 import os
 import shutil
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Root directories
 TESTS_DIR = Path(__file__).parent
@@ -87,7 +88,9 @@ def shapes_test_parsed(shapes_test_svg):
 def basic_text_pptx(basic_text_svg, output_dir, typ_sources_dir):
     """Convert basic_text to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "basic_text_test.pptx")
     notes = query_speaker_notes(
@@ -102,7 +105,9 @@ def basic_text_pptx(basic_text_svg, output_dir, typ_sources_dir):
 def shapes_test_pptx(shapes_test_svg, output_dir, typ_sources_dir):
     """Convert shapes_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "shapes_test_test.pptx")
     notes = query_speaker_notes(
@@ -117,7 +122,9 @@ def shapes_test_pptx(shapes_test_svg, output_dir, typ_sources_dir):
 def speaker_notes_pptx(speaker_notes_svg, output_dir, typ_sources_dir):
     """Convert speaker_notes_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "speaker_notes_test_test.pptx")
     notes = query_speaker_notes(
@@ -148,7 +155,9 @@ def math_test_parsed(math_test_svg):
 def math_test_pptx(math_test_svg, output_dir, typ_sources_dir):
     """Convert math_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "math_test_test.pptx")
     notes = query_speaker_notes(
@@ -179,7 +188,9 @@ def chinese_test_parsed(chinese_test_svg):
 def chinese_test_pptx(chinese_test_svg, output_dir, typ_sources_dir):
     """Convert chinese_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "chinese_test_test.pptx")
     notes = query_speaker_notes(
@@ -210,7 +221,9 @@ def inline_math_test_parsed(inline_math_test_svg):
 def inline_math_test_pptx(inline_math_test_svg, output_dir, typ_sources_dir):
     """Convert inline_math_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "inline_math_test_test.pptx")
     notes = query_speaker_notes(
@@ -241,7 +254,9 @@ def table_test_parsed(table_test_svg):
 def table_test_pptx(table_test_svg, output_dir, typ_sources_dir):
     """Convert table_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "table_test_test.pptx")
     notes = query_speaker_notes(
@@ -272,7 +287,9 @@ def pinit_test_parsed(pinit_test_svg):
 def pinit_test_pptx(pinit_test_svg, output_dir, typ_sources_dir):
     """Convert pinit_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "pinit_test_test.pptx")
     notes = query_speaker_notes(
@@ -303,7 +320,9 @@ def link_test_parsed(link_test_svg):
 def link_test_pptx(link_test_svg, output_dir, typ_sources_dir):
     """Convert link_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "link_test_test.pptx")
     notes = query_speaker_notes(
@@ -334,7 +353,9 @@ def alignment_test_parsed(alignment_test_svg):
 def alignment_test_pptx(alignment_test_svg, output_dir, typ_sources_dir):
     """Convert alignment_test to PPTX with default config (paragraph detection off)."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "alignment_test_test.pptx")
     notes = query_speaker_notes(
@@ -355,7 +376,9 @@ def alignment_test_pptx_with_paragraphs(
     emitted on merged paragraph groups, which require the opt-in heuristic.
     """
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "alignment_test_with_paragraphs.pptx")
     notes = query_speaker_notes(
@@ -386,7 +409,9 @@ def image_test_parsed(image_test_svg):
 def image_test_pptx(image_test_svg, output_dir, typ_sources_dir):
     """Convert image_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "image_test_test.pptx")
     notes = query_speaker_notes(
@@ -417,7 +442,9 @@ def code_block_test_parsed(code_block_test_svg):
 def code_block_test_pptx(code_block_test_svg, output_dir, typ_sources_dir):
     """Convert code_block_test to PPTX and return the path."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "code_block_test_test.pptx")
     notes = query_speaker_notes(
@@ -445,7 +472,9 @@ def columns_test_parsed(columns_test_svg):
 def columns_test_pptx(columns_test_svg, output_dir, typ_sources_dir):
     """Convert columns_test to PPTX with default config (paragraph detection off)."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "columns_test_test.pptx")
     notes = query_speaker_notes(
@@ -460,7 +489,9 @@ def columns_test_pptx(columns_test_svg, output_dir, typ_sources_dir):
 def columns_test_pptx_with_paragraphs(columns_test_svg, output_dir, typ_sources_dir):
     """Convert columns_test to PPTX with paragraph auto-detection enabled."""
     from typ2pptx.core.converter import (
-        TypstSVGConverter, ConversionConfig, query_speaker_notes,
+        ConversionConfig,
+        TypstSVGConverter,
+        query_speaker_notes,
     )
     output_path = str(output_dir / "columns_test_with_paragraphs.pptx")
     notes = query_speaker_notes(
