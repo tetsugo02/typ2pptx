@@ -33,3 +33,6 @@ local/
 # Bundled binaries (downloaded at build time)
 typ2pptx/data/bin/typst-ts-cli
 typ2pptx/data/bin/typst-ts-cli.exe
+
+# Example video assets (generated locally, see examples/video/slides.typ)
+examples/video/videos/

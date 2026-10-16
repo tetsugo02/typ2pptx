@@ -88,6 +88,14 @@ def main():
         ),
     )
 
+    parser.add_argument(
+        '--no-videos',
+        action='store_true',
+        default=False,
+        help='Do not embed videos marked with <typ2pptx-video> metadata '
+             '(the poster images are kept as pictures)',
+    )
+
     args = parser.parse_args()
 
     # Validate input
@@ -109,6 +117,7 @@ def main():
         detect_paragraphs=args.detect_paragraphs,
         font_size_scale=args.font_size_scale,
         emu_per_px=args.emu_per_px,
+        embed_videos=not args.no_videos,
     )
 
     try:

@@ -12,6 +12,7 @@ import math
 import json
 import copy
 import shutil
+import sys
 import tempfile
 import subprocess
 from pathlib import Path
@@ -24,6 +25,7 @@ from pptx import Presentation
 from pptx.util import Inches, Cm, Pt, Emu
 from pptx.enum.text import PP_ALIGN
 
+from .video import VideoPlacement, embed_videos, query_videos
 from .typst_svg_parser import (
     parse_typst_svg, TypstSVGData, PageData, TextSegment,
     ShapeElement, GlyphInfo, GlyphUse, FontVariant, LinkRegion,
@@ -77,6 +79,9 @@ class ConversionConfig:
     # makes text render 12700 * font_size_scale / emu_per_px larger than
     # its layout boxes.
     emu_per_px: Optional[float] = None
+    # Embed videos marked with <typ2pptx-video> metadata (see core/video.py).
+    # Only applies to .typ input; decks without such metadata are unaffected.
+    embed_videos: bool = True
 
     def resolved_emu_per_px(self) -> float:
         """Geometry scale in EMU per SVG unit, paired with font_size_scale."""
@@ -997,13 +1002,18 @@ class TypstSVGConverter:
         self._svg_data: Optional[TypstSVGData] = None
 
     def convert(self, svg_path: str, output_path: str,
-                speaker_notes: Optional[Dict[int, str]] = None) -> str:
+                speaker_notes: Optional[Dict[int, str]] = None,
+                videos: Optional[List[VideoPlacement]] = None,
+                media_dir: Optional[str] = None) -> str:
         """Convert a typst.ts SVG file to PPTX.
 
         Args:
             svg_path: Path to the SVG file from typst-ts-cli
             output_path: Output PPTX file path
             speaker_notes: Optional dict mapping page_num (0-indexed) to notes text
+            videos: Optional video placements (from query_videos) to embed
+            media_dir: Directory that video src/poster paths are relative to
+                (default: the SVG's directory)
 
         Returns:
             Path to the generated PPTX file
@@ -1083,6 +1093,16 @@ class TypstSVGConverter:
         # blue (hlink) and purple (folHlink) from overriding run-level colors.
         # This ensures hyperlinked text preserves its original Typst color.
         self._neutralize_theme_hyperlink_colors(prs)
+
+        if videos:
+            if self.config.verbose:
+                print(f"Embedding {len(videos)} video placement(s)...")
+            embed_videos(
+                prs, videos,
+                base_dir=media_dir or str(Path(svg_path).resolve().parent),
+                emu_per_pt=self._emu_per_px,
+                verbose=self.config.verbose,
+            )
 
         # Save
         prs.save(output_path)
@@ -3519,9 +3539,18 @@ def convert_typst_to_pptx(
 
         # Query speaker notes
         speaker_notes = query_speaker_notes(str(input_path), root=root)
+
+        videos = []
+        if config.embed_videos:
+            try:
+                videos = query_videos(str(input_path), root=root)
+            except Exception as e:
+                print(f"Warning: could not query video metadata: {e}", file=sys.stderr)
+        media_dir = root or str(input_path.resolve().parent)
     elif input_path.suffix == '.svg':
         svg_path = str(input_path)
         speaker_notes = {}
+        videos, media_dir = [], None
     else:
         raise ValueError(f"Unsupported input format: {input_path.suffix}")
 
@@ -3529,7 +3558,8 @@ def convert_typst_to_pptx(
         print(f"Converting {svg_path} to PPTX...")
 
     converter = TypstSVGConverter(config)
-    result = converter.convert(svg_path, output_path, speaker_notes=speaker_notes)
+    result = converter.convert(svg_path, output_path, speaker_notes=speaker_notes,
+                               videos=videos, media_dir=media_dir)
 
     if verbose:
         print(f"Done! Output: {result}")
