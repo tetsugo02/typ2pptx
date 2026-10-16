@@ -3378,7 +3378,8 @@ def compile_typst_to_svg(
 
     Args:
         typ_path: Path to the .typ file
-        output_svg: Output SVG path (default: same name with .artifact.svg)
+        output_svg: Output SVG file path (default: <name>.artifact.svg next
+            to the .typ file)
         typst_ts_cli: Path to the typst-ts-cli binary (default: bundled or system)
         root: Root directory for the Typst project (for resolving imports/paths)
 
@@ -3402,22 +3403,38 @@ def compile_typst_to_svg(
         "--format", "svg",
     ]
 
+    # typst-ts-cli's -o takes an output *directory* and always writes
+    # <name>.artifact.svg into it, so compile into a scratch directory next
+    # to the requested file and move the result there.
+    out_dir = None
     if output_svg:
-        cmd.extend(["-o", output_svg])
+        Path(output_svg).parent.mkdir(parents=True, exist_ok=True)
+        out_dir = tempfile.mkdtemp(prefix=".typ2pptx-", dir=str(Path(output_svg).parent))
+        cmd.extend(["-o", out_dir])
 
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=workspace_dir,
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"typst-ts-cli failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=workspace_dir,
         )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"typst-ts-cli failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
+
+        if out_dir:
+            produced = Path(out_dir) / typ_path.with_suffix('.artifact.svg').name
+            if not produced.exists():
+                raise FileNotFoundError(f"Could not find SVG output. Expected: {produced}")
+            os.replace(produced, output_svg)
+    finally:
+        if out_dir:
+            shutil.rmtree(out_dir, ignore_errors=True)
 
     # Find the output file
     if output_svg:
@@ -3508,13 +3525,18 @@ def convert_typst_to_pptx(
         output_path = str(input_path.with_suffix('.pptx'))
 
     svg_path = None
+    svg_tmp_dir = None
 
     if input_path.suffix == '.typ':
-        # Compile to SVG first
+        # Compile to SVG first, in a temporary directory so that no
+        # intermediate .artifact.svg is left next to the source.
         if verbose:
             print(f"Compiling {input_path} to SVG...")
+        svg_tmp_dir = tempfile.TemporaryDirectory(prefix="typ2pptx-")
         svg_path = compile_typst_to_svg(
-            str(input_path), typst_ts_cli=typst_ts_cli, root=root,
+            str(input_path),
+            output_svg=str(Path(svg_tmp_dir.name) / input_path.with_suffix('.artifact.svg').name),
+            typst_ts_cli=typst_ts_cli, root=root,
         )
 
         # Query speaker notes
@@ -3528,8 +3550,12 @@ def convert_typst_to_pptx(
     if verbose:
         print(f"Converting {svg_path} to PPTX...")
 
-    converter = TypstSVGConverter(config)
-    result = converter.convert(svg_path, output_path, speaker_notes=speaker_notes)
+    try:
+        converter = TypstSVGConverter(config)
+        result = converter.convert(svg_path, output_path, speaker_notes=speaker_notes)
+    finally:
+        if svg_tmp_dir is not None:
+            svg_tmp_dir.cleanup()
 
     if verbose:
         print(f"Done! Output: {result}")

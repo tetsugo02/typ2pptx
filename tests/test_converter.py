@@ -217,6 +217,9 @@ class TestCompileTypstToSvg:
         def fake_run(command, **kwargs):
             captured["command"] = command
             captured["kwargs"] = kwargs
+            # -o is an output directory; typst-ts-cli writes <name>.artifact.svg
+            out_dir = command[command.index("-o") + 1]
+            (Path(out_dir) / "slides.artifact.svg").write_text("<svg/>")
             return SimpleNamespace(returncode=0, stdout="", stderr="")
 
         monkeypatch.setattr("typ2pptx.core.converter.subprocess.run", fake_run)
@@ -228,6 +231,7 @@ class TestCompileTypstToSvg:
         )
 
         assert result == str(output_path)
+        assert output_path.read_text() == "<svg/>"
         assert captured["kwargs"]["encoding"] == "utf-8"
         assert captured["kwargs"]["errors"] == "replace"
 
