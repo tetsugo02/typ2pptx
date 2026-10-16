@@ -18,7 +18,8 @@ dependencies = [
     "cssselect>=1.2.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
+# Installed by `uv sync` by default; with pip >= 25.1: `pip install --group dev`
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

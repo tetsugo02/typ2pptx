@@ -235,47 +235,50 @@ typ2pptx    -->  PowerPoint (.pptx)
 
 ## Development
 
-### Install in editable/development mode
+### Set up the development environment
+
+The project is managed with [uv](https://docs.astral.sh/uv/). `uv sync` creates `.venv/`, installs typ2pptx in editable mode, and installs the `dev` dependency group (pytest, etc.) at the versions pinned in `uv.lock`:
 
 ```bash
-# pip
-pip install -e .
-pip install -e ".[dev]"    # with dev dependencies (pytest, etc.)
+uv sync
 
-# uv
-uv pip install -e .
-uv pip install -e ".[dev]"
+# typst-ts-cli is not committed; download it into typ2pptx/data/bin/
+uv run python scripts/download_typst_ts_cli.py
 ```
+
+Without uv, `pip install -e . --group dev` (pip >= 25.1) installs the same dependencies, unpinned.
 
 ### Updating dependencies
 
-All dependencies are declared in `pyproject.toml`. After modifying them:
+All dependencies are declared in `pyproject.toml`. Add or change them with uv so that `uv.lock` stays in sync, and commit both files:
 
 ```bash
-# pip
-pip install -e .
-
-# uv
-uv pip install -e .
+uv add "lxml>=5"            # runtime dependency
+uv add --group dev ruff     # development-only dependency
+uv lock --upgrade           # refresh all pinned versions
 ```
 
 ## Testing
 
+Compiler integration tests need typst-ts-cli; point `TYP2PPTX_TEST_TYPST_TS_CLI` at it (they are skipped otherwise):
+
 ```bash
+export TYP2PPTX_TEST_TYPST_TS_CLI=$PWD/typ2pptx/data/bin/typst-ts-cli
+
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run specific test modules
-pytest tests/test_converter.py -v
-pytest tests/test_math.py -v
-pytest tests/test_inline_math.py -v
-pytest tests/test_table.py -v
-pytest tests/test_pinit.py -v
-pytest tests/test_links.py -v
-pytest tests/test_images.py -v
-pytest tests/test_chinese.py -v
-pytest tests/test_alignment.py -v
-pytest tests/test_code_blocks.py -v
+uv run pytest tests/test_converter.py -v
+uv run pytest tests/test_math.py -v
+uv run pytest tests/test_inline_math.py -v
+uv run pytest tests/test_table.py -v
+uv run pytest tests/test_pinit.py -v
+uv run pytest tests/test_links.py -v
+uv run pytest tests/test_images.py -v
+uv run pytest tests/test_chinese.py -v
+uv run pytest tests/test_alignment.py -v
+uv run pytest tests/test_code_blocks.py -v
 ```
 
 ### Test Coverage
