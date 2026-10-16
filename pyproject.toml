@@ -38,4 +38,4 @@ python_functions = ["test_*"]
 include = ["typ2pptx*"]
 
 [tool.setuptools.package-data]
-"typ2pptx" = ["data/bin/*"]
+"typ2pptx" = ["data/bin/*", "data/typst/*.typ"]

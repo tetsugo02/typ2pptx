@@ -199,3 +199,26 @@ class TestVideoPipeline:
         prs = Presentation(out)
         assert sum(len(_movies(s)) for s in prs.slides) == 0
         assert len(_pictures(prs.slides[1])) == 1
+
+
+class TestVideoHelper:
+
+    def test_packaged_helper_matches_example(self):
+        from typ2pptx.core.video import VIDEO_HELPER
+        assert VIDEO_HELPER.read_bytes() == (PROJECT_DIR / "examples/video/video.typ").read_bytes()
+
+    def test_write_video_helper(self, tmp_path):
+        from typ2pptx.core.video import VIDEO_HELPER, write_video_helper
+        dest = write_video_helper(str(tmp_path / "deck"))
+        assert dest == tmp_path / "deck" / "video.typ"
+        assert dest.read_bytes() == VIDEO_HELPER.read_bytes()
+        with pytest.raises(FileExistsError):
+            write_video_helper(str(tmp_path / "deck"))
+
+    def test_cli_write_video_helper(self, tmp_path, monkeypatch, capsys):
+        from typ2pptx.__main__ import main
+        monkeypatch.setattr("sys.argv", ["typ2pptx", "--write-video-helper", str(tmp_path)])
+        main()
+        assert (tmp_path / "video.typ").is_file()
+        assert "video.typ" in capsys.readouterr().out
+

@@ -1,6 +1,10 @@
 // Video placeholder for typ2pptx.
 //
-// Copy this file into your Typst project and use:
+// Write this file into your Typst project with
+//
+//   typ2pptx --write-video-helper .
+//
+// and use:
 //
 //   #import "video.typ": video
 //   #video("videos/demo.mp4", poster: "videos/demo.jpg", width: 10cm, height: 5.625cm)

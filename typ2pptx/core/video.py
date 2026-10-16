@@ -29,6 +29,10 @@ from pptx.util import Emu
 
 VIDEO_LABEL = "<typ2pptx-video>"
 
+# The Typst side of this feature, shipped with the package
+# (identical to examples/video/video.typ).
+VIDEO_HELPER = Path(__file__).resolve().parent.parent / "data" / "typst" / "video.typ"
+
 # Allowed mismatch, in pt, between the metadata box and the poster picture.
 MATCH_TOLERANCE_PT = 0.5
 
@@ -76,6 +80,16 @@ def query_videos(typ_path: str, root: Optional[str] = None) -> List[VideoPlaceme
         query_kwargs["root"] = root
     result = typst_py.query(str(Path(typ_path).resolve()), VIDEO_LABEL, **query_kwargs)
     return [VideoPlacement.from_metadata(v) for v in json.loads(result)]
+
+
+def write_video_helper(dest_dir: str) -> Path:
+    """Write the ``#video()`` Typst helper (video.typ) into ``dest_dir``."""
+    dest = Path(dest_dir) / VIDEO_HELPER.name
+    if dest.exists():
+        raise FileExistsError(f"{dest} already exists; remove it to update the helper")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(VIDEO_HELPER.read_text(encoding="utf-8"), encoding="utf-8")
+    return dest
 
 
 def _resolve(path: str, base_dir: Path) -> Path:

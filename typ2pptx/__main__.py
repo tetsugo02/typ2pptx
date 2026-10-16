@@ -5,6 +5,7 @@ Usage:
     typ2pptx slides.typ -o slides.pptx
     typ2pptx slides.svg -o slides.pptx
     typ2pptx slides.typ --typst-ts-cli /path/to/typst-ts-cli
+    typ2pptx --write-video-helper .     # write video.typ for #video()
 """
 
 import argparse
@@ -22,6 +23,7 @@ def main():
 
     parser.add_argument(
         'input',
+        nargs='?',
         help='Input file (.typ or .svg)',
     )
     parser.add_argument(
@@ -96,7 +98,28 @@ def main():
              '(the poster images are kept as pictures)',
     )
 
+    parser.add_argument(
+        '--write-video-helper',
+        metavar='DIR',
+        default=None,
+        help='Write the #video() Typst helper (video.typ) into DIR and exit',
+    )
+
     args = parser.parse_args()
+
+    if args.write_video_helper is not None:
+        from .core.video import write_video_helper
+        try:
+            dest = write_video_helper(args.write_video_helper)
+        except FileExistsError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Wrote {dest}")
+        print('Use it with: #import "video.typ": video')
+        return
+
+    if args.input is None:
+        parser.error("the following arguments are required: input")
 
     # Validate input
     input_path = Path(args.input)

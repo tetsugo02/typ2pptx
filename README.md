@@ -84,7 +84,11 @@ typ2pptx slides.typ -o slides.pptx --no-videos
 
 ### Embedded Videos
 
-Typst has no video element, so copy [`examples/video/video.typ`](examples/video/video.typ) into your project and mark each video with a poster image:
+Typst has no video element, so write the `#video()` helper into your project (or copy [`examples/video/video.typ`](examples/video/video.typ)) and mark each video with a poster image:
+
+```bash
+typ2pptx --write-video-helper .    # writes ./video.typ
+```
 
 ```typst
 #import "video.typ": video
