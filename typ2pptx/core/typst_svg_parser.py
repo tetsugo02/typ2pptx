@@ -46,6 +46,8 @@ class FontVariant:
     glyph_count: int  # Number of glyphs with this prefix
     uses_quadratic: bool  # True if glyphs use Q commands
     style: str = "regular"  # regular, bold, italic, bolditalic, mono, math
+    # Family name of the font, when known (see core/fonts.py)
+    font_family: Optional[str] = None
 
 
 @dataclass
@@ -74,6 +76,8 @@ class TextSegment:
     glyph_uses: List['GlyphUse'] = field(default_factory=list)
     # The glyph scale factor (from the typst-text group's scale transform)
     glyph_scale: float = 0.0
+    # Family name of the font, when known (see core/fonts.py)
+    font_family: Optional[str] = None
 
 
 @dataclass

@@ -35,11 +35,13 @@ Changes from upstream 0.2.3, each on its own branch:
 | `feat/typst-ts-cli-auto-download` | download typst-ts-cli (SHA-256 verified) on first use when it is not bundled |
 | `fix/svg-output-path` | `compile_typst_to_svg(output_svg=...)` works; no `.artifact.svg` left next to the source |
 | `chore/uv-project` | uv-managed development (`uv sync`, `uv.lock`) |
+| `feat/preserve-font-family` | text keeps the document's installed font families (Latin and East Asian), `--no-preserve-fonts` |
 
 ## Features
 
 - **Editable text**: All text is extracted as editable, selectable, copyable PowerPoint text (not rasterized images)
 - **Font variants**: Detects and preserves regular, bold, italic, bold-italic, and monospace text styles
+- **Font families**: For `.typ` input, text keeps the document's font families (e.g. Roboto, Source Han Sans JP) for both Latin and East Asian text. Fonts that are only bundled with Typst (Libertinus Serif, New Computer Modern, DejaVu Sans Mono) and so are missing on most machines fall back to Arial (Consolas for code). See [Fonts](#fonts)
 - **Math formulas**: Inline math rendered as Cambria Math text with PPTX-native sub/superscript baseline offsets (auto-sized by PowerPoint); display math rendered as native DrawingML curve shapes (glyph outlines) grouped per formula
 - **Heuristic math mode**: Auto-classifies formulas as simple (text) or complex (glyph curves) for best rendering; stacked fractions (e.g. `$1/2$`) are auto-detected and routed to glyph mode
 - **Native shapes**: Converts SVG shapes (rectangles, circles, ellipses, lines, paths, polygons) to native DrawingML custom geometry
@@ -59,8 +61,9 @@ Changes from upstream 0.2.3, each on its own branch:
 ## Prerequisites
 
 - **Python 3.9+**
-- **typst** (Python package, v0.14+): For speaker notes extraction and SVG/PDF image rasterization
+- **typst** (Python package, v0.14+): For speaker notes extraction, font recovery and SVG/PDF image rasterization
   - Installed automatically via pip
+- **pdfminer.six**: Reads the font of each glyph from a PDF of the document (installed automatically)
 - **typst-ts-cli** (v0.6.0+): For compiling `.typ` files to SVG with foreignObject text overlays
   - Bundled in the platform wheels on PyPI
   - Otherwise (sdist, `pip install git+...`) typ2pptx uses `typst-ts-cli` from `PATH`, or downloads the pinned [typst.ts release](https://github.com/Myriad-Dreamin/typst.ts/releases) on first use, verifies its SHA-256, and caches it (`~/Library/Caches/typ2pptx` on macOS, `~/.cache/typ2pptx` on Linux, `%LOCALAPPDATA%\typ2pptx` on Windows; override with `TYP2PPTX_CACHE_DIR`)
@@ -111,7 +114,26 @@ typ2pptx slides.typ -o slides.pptx --detect-paragraphs
 
 # Keep video posters as plain pictures instead of embedding the videos
 typ2pptx slides.typ -o slides.pptx --no-videos
+
+# Use Arial (Consolas for code) instead of the document's fonts
+typ2pptx slides.typ -o slides.pptx --no-preserve-fonts
 ```
+
+### Fonts
+
+The typst.ts SVG draws text as glyph outlines and does not name its fonts. For
+`.typ` input, typ2pptx also compiles the document to PDF with the typst Python
+package (pinned to the Typst version of typst-ts-cli, so the layout is the
+same), reads the font of every glyph from it, and matches the SVG text to those
+glyphs by position. Each text run then gets that font's family for both Latin
+(`<a:latin>`) and East Asian (`<a:ea>`) text, so CJK text no longer falls back
+to the theme's East Asian font.
+
+Only fonts installed on the converting machine are named. Fonts bundled with
+Typst itself are not installed on other machines either, so text in them uses
+Arial (Consolas for code, Cambria Math for math) as before. Anyone opening the
+PPTX needs the named fonts installed too. Pass `--no-preserve-fonts`
+(`ConversionConfig(preserve_fonts=False)`) to always use the fallback fonts.
 
 ### Embedded Videos
 
@@ -211,6 +233,8 @@ typst-ts-cli  -->  SVG (with foreignObject text overlays)
     v
 typst.query() -->  Speaker notes (pdfpc JSON format, via Python package)
     |
+typst.compile() -> PDF  -->  font name of every glyph (pdfminer.six)
+    |
     v
 typ2pptx    -->  PowerPoint (.pptx)
 ```
@@ -224,7 +248,7 @@ typ2pptx    -->  PowerPoint (.pptx)
    - 5-character hash prefixes per font variant
    - `<a>` hyperlink elements with `<rect>` bounding boxes for link regions
 
-2. **Font Variant Detection**: Identifies font styles by analyzing glyph paths:
+2. **Font Detection** (`fonts.py`): For `.typ` input, each glyph prefix is matched to a font of a PDF of the same document; the PostScript name gives the family (looked up among the installed fonts), bold/italic, and whether it is a monospace or math font. Without a PDF (`.svg` input), font styles are guessed from glyph paths:
    - Quadratic curves (Q commands) indicate monospace fonts
    - Glyph width comparison differentiates bold from italic
    - Unicode math character detection (U+1D400+) identifies math fonts
@@ -370,6 +394,7 @@ uv run pytest tests/test_code_blocks.py -v
 typ2pptx/
   core/
     converter.py          # Main SVG -> PPTX conversion logic
+    fonts.py              # Font families recovered from a PDF of the document
     video.py              # <typ2pptx-video> metadata query and movie embedding
     typst_svg_parser.py   # typst.ts SVG parsing and text extraction
   scripts/
@@ -396,6 +421,7 @@ tests/
   test_path_pipeline.py   # Path conversion tests
   test_paragraph_detection.py # Paragraph auto-detection toggle tests
   test_video.py           # Embedded video tests
+  test_fonts.py           # Font family recovery tests
   typ_sources/            # Test Typst source files
     basic_text.typ
     shapes_test.typ

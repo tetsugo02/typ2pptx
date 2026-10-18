@@ -24,7 +24,9 @@ from io import BytesIO
 from pptx import Presentation
 from pptx.util import Inches, Cm, Pt, Emu
 from pptx.enum.text import PP_ALIGN
+from pptx.oxml.ns import qn
 
+from .fonts import PdfGlyph, apply_pdf_fonts, compile_pdf, extract_pdf_glyphs, installed_families
 from .video import VideoPlacement, embed_videos, query_videos
 from .typst_svg_parser import (
     parse_typst_svg, TypstSVGData, PageData, TextSegment,
@@ -82,6 +84,10 @@ class ConversionConfig:
     # Embed videos marked with <typ2pptx-video> metadata (see core/video.py).
     # Only applies to .typ input; decks without such metadata are unaffected.
     embed_videos: bool = True
+    # Keep the document's font families in the PPTX (see core/fonts.py).
+    # Only applies to .typ input. When False, or when the fonts cannot be
+    # recovered, text uses Arial (Consolas for code) as before.
+    preserve_fonts: bool = True
 
     def resolved_emu_per_px(self) -> float:
         """Geometry scale in EMU per SVG unit, paired with font_size_scale."""
@@ -1004,7 +1010,8 @@ class TypstSVGConverter:
     def convert(self, svg_path: str, output_path: str,
                 speaker_notes: Optional[Dict[int, str]] = None,
                 videos: Optional[List[VideoPlacement]] = None,
-                media_dir: Optional[str] = None) -> str:
+                media_dir: Optional[str] = None,
+                pdf_glyphs: Optional[List[List[PdfGlyph]]] = None) -> str:
         """Convert a typst.ts SVG file to PPTX.
 
         Args:
@@ -1014,6 +1021,8 @@ class TypstSVGConverter:
             videos: Optional video placements (from query_videos) to embed
             media_dir: Directory that video src/poster paths are relative to
                 (default: the SVG's directory)
+            pdf_glyphs: Glyphs of a PDF of the same document (from
+                extract_pdf_glyphs), used to name the font of each text segment
 
         Returns:
             Path to the generated PPTX file
@@ -1029,7 +1038,15 @@ class TypstSVGConverter:
                 print(f"  {prefix}: {variant.glyph_count} glyphs, "
                       f"quadratic={variant.uses_quadratic}")
 
+        if pdf_glyphs is not None:
+            fonts = apply_pdf_fonts(self._svg_data, pdf_glyphs, installed_families())
+            if self.config.verbose:
+                for prefix, font in fonts.items():
+                    family = font.family or "not installed"
+                    print(f"  {prefix}: {font.postscript_name} -> {family} ({font.style})")
+
         # Use the font variant styles already computed by the parser's prescan
+        # (or recovered from the PDF above)
         prefix_to_style = {
             prefix: variant.style
             for prefix, variant in self._svg_data.font_variants.items()
@@ -2391,11 +2408,7 @@ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 
             run.text = text
 
-            # Font properties
-            font_props = _font_variant_to_props(seg.font_variant)
-            run.font.bold = font_props['bold']
-            run.font.italic = font_props['italic']
-            run.font.name = font_props['font_family']
+            self._set_run_font(run, seg)
 
             # Font size
             font_size_pt = seg.font_size * self.config.font_size_scale
@@ -2548,11 +2561,7 @@ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 
                 run.text = text
 
-                # Font properties
-                font_props = _font_variant_to_props(seg.font_variant)
-                run.font.bold = font_props['bold']
-                run.font.italic = font_props['italic']
-                run.font.name = font_props['font_family']
+                self._set_run_font(run, seg)
 
                 # Font size
                 font_size_pt = seg.font_size * self.config.font_size_scale
@@ -3130,6 +3139,33 @@ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
                     if self.config.verbose:
                         print(f"Warning: Failed to inject math glyph shape: {e}")
 
+    def _set_run_font(self, run, seg):
+        """Set a text run's bold/italic flags and font family.
+
+        With a family recovered from the PDF (preserve_fonts), the run uses
+        it for both Latin (<a:latin>) and East Asian (<a:ea>) text, since a
+        Typst segment is drawn with a single font: without <a:ea>,
+        PowerPoint renders CJK text in the theme's East Asian font. Math
+        keeps Cambria Math, which covers Unicode math alphanumerics.
+        """
+        from lxml import etree
+
+        font_props = _font_variant_to_props(seg.font_variant)
+        run.font.bold = font_props['bold']
+        run.font.italic = font_props['italic']
+
+        family = seg.font_family if seg.font_variant != 'math' else None
+        run.font.name = family or font_props['font_family']
+        if family is None:
+            return
+
+        rPr = run._r.get_or_add_rPr()
+        ea = rPr.find(qn('a:ea'))
+        if ea is None:
+            ea = etree.SubElement(rPr, qn('a:ea'))
+            rPr.find(qn('a:latin')).addnext(ea)
+        ea.set('typeface', family)
+
     def _set_run_baseline(self, run, baseline_pct: int):
         """Set the baseline offset for a run (superscript/subscript).
 
@@ -3554,10 +3590,19 @@ def convert_typst_to_pptx(
             except Exception as e:
                 print(f"Warning: could not query video metadata: {e}", file=sys.stderr)
         media_dir = root or str(input_path.resolve().parent)
+
+        pdf_glyphs = None
+        if config.preserve_fonts:
+            try:
+                pdf_glyphs = extract_pdf_glyphs(compile_pdf(str(input_path), root=root))
+            except Exception as e:
+                print(f"Warning: could not recover font names, using Arial: {e}",
+                      file=sys.stderr)
     elif input_path.suffix == '.svg':
         svg_path = str(input_path)
         speaker_notes = {}
         videos, media_dir = [], None
+        pdf_glyphs = None
     else:
         raise ValueError(f"Unsupported input format: {input_path.suffix}")
 
@@ -3567,7 +3612,8 @@ def convert_typst_to_pptx(
     try:
         converter = TypstSVGConverter(config)
         result = converter.convert(svg_path, output_path, speaker_notes=speaker_notes,
-                                   videos=videos, media_dir=media_dir)
+                                   videos=videos, media_dir=media_dir,
+                                   pdf_glyphs=pdf_glyphs)
     finally:
         if svg_tmp_dir is not None:
             svg_tmp_dir.cleanup()

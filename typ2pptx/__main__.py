@@ -99,6 +99,14 @@ def main():
     )
 
     parser.add_argument(
+        '--no-preserve-fonts',
+        action='store_true',
+        default=False,
+        help='Use Arial (Consolas for code) for all text instead of the fonts '
+             'of the Typst document',
+    )
+
+    parser.add_argument(
         '--write-video-helper',
         metavar='DIR',
         default=None,
@@ -141,6 +149,7 @@ def main():
         font_size_scale=args.font_size_scale,
         emu_per_px=args.emu_per_px,
         embed_videos=not args.no_videos,
+        preserve_fonts=not args.no_preserve_fonts,
     )
 
     try:

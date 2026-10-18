@@ -18,6 +18,7 @@ dependencies = [
     # so metadata queried with typst-py matches the typst-ts-cli layout.
     "typst>=0.14,<0.15",
     "cssselect>=1.2.0",
+    "pdfminer-six>=20231228",
 ]
 
 [dependency-groups]
